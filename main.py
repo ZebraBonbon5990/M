@@ -73,24 +73,49 @@ def getValue(n):
     return val
 
 
-def buttonClicked(n):
+def buttonClicked(n, ignoreFlags=False):
     if not buttons[n]["Revealed"] and not flag:
-        buttons[n]["Revealed"] = True
-        revealedButtons.append(n)
-        buttons[n]["Button"]["bg"] = "white"
-        if buttons[n]["Type"] == "Mine":
-            ps.playsound("Sounds/explosion.wav")
-            exit()
-        if len(revealedButtons) > 69:
-            tl = tk.Toplevel()
-            label = tk.Label(master=tl, text="You won!", fg="green").pack()
-            tl.mainloop()
-        buttons[n]["Value"] = getValue(n)
-        if not buttons[n]["Value"] == 0:
-            buttons[n]["Button"]["text"] = buttons[n]["Value"]
-        if buttons[n]["Button"]["text"] == 1:
-            buttons[n]["Button"].config(fg="#3240a8")
-        print(n)
+        if not buttons[n]["Flagged"] or ignoreFlags:
+            buttons[n]["Revealed"] = True
+            revealedButtons.append(n)
+            buttons[n]["Button"]["bg"] = "white"
+            if buttons[n]["Type"] == "Mine":
+                ps.playsound("Sounds/explosion.wav")
+                exit()
+            if len(revealedButtons) > 69:
+                tl = tk.Toplevel()
+                label = tk.Label(master=tl, text="You won!", fg="green").pack()
+                tl.mainloop()
+            buttons[n]["Value"] = getValue(n)
+            if not buttons[n]["Value"] == 0:
+                buttons[n]["Button"]["text"] = buttons[n]["Value"]
+            else:
+                if True:
+                    upperCorners = [0, 1, 2, 3, 4, 5, 6, 7]
+                    lowerCorners = [72, 73, 74, 75, 76, 77, 78, 79]
+                    leftCorners = [0, 8, 16, 24, 32, 40, 48, 56, 64, 72]
+                    rightCorners = [7, 15, 23, 31, 39, 47, 55, 63, 71, 79]
+                    toReveal = list()
+                    if not n in upperCorners:
+                        toReveal.append(n-8)
+                    if not n in leftCorners:
+                        toReveal.append(n-1)
+                    if not n in rightCorners:
+                        toReveal.append(n+1)
+                    if not n in lowerCorners:
+                        toReveal.append(n+8)
+                    if not n in upperCorners and not n in leftCorners:
+                        toReveal.append(n-9)
+                    if not n in upperCorners and not n in rightCorners:
+                        toReveal.append(n-7)
+                    if not n in lowerCorners and not n in leftCorners:
+                        toReveal.append(n+7)
+                    if not n in lowerCorners and not n in rightCorners:
+                        toReveal.append(n+9)
+                for i in toReveal:
+                    buttonClicked(i, ignoreFlags=True)
+            if buttons[n]["Button"]["text"] == 1:
+                buttons[n]["Button"].config(fg="#3240a8")
     elif flag:
         if not buttons[n]["Flagged"]:
             buttons[n]["Flagged"] = True
@@ -106,7 +131,7 @@ mineCoords.sort(key=lambda x: x)
 exitButton = tk.Button(master=window, text="Exit", bg="red", command=buttonExitClick)
 exitButton.place(x=1470, y=5, width=60, height=30)
 switchButton = tk.Button(master=window, text="Flag", bg="yellow", command=buttonSwitchClick)
-switchButton.place(x=770, y=5, width=60, height=30)
+switchButton.place(x=250, y=250, width=300, height=300)
 
 buttons = list()
 for n in range(80):
@@ -116,7 +141,6 @@ for n in range(80):
     else:
         buttons[n]["Type"] = "Number"
         buttons[n]["Value"] = 0
-
 
 line = 1
 y = 1
