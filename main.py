@@ -45,6 +45,3 @@ for x in range(80):
     line += 1
 
 window.mainloop()
-
-print("Hello")
-
