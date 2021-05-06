@@ -24,22 +24,47 @@ def initiate(mode):
         height = 12
         buttonSize = 50
     elif mode == "hard":
-        mineAmount = 25
+        mineAmount = 30
         width = 14
         height = 16
         buttonSize = 40
-    
 
 
-    def getMineCoords(amount):
+    def getSurrounding(n):
+        upperCorners = [i for i in range(width)]
+        lowerCorners = [width*height - (i+1) for i in range(width)]
+        leftCorners = [width*i for i in range(height)]
+        rightCorners = [(width*(i+1))-1 for i in range(height)]
+        toReveal = list()
+        if not n in upperCorners:
+                            toReveal.append(n-width)
+        if not n in leftCorners:
+                            toReveal.append(n-1)
+        if not n in rightCorners:
+                            toReveal.append(n+1)
+        if not n in lowerCorners:
+                            toReveal.append(n+width)
+        if not n in upperCorners and not n in leftCorners:
+                            toReveal.append(n-(width+1))
+        if not n in upperCorners and not n in rightCorners:
+                            toReveal.append(n-(width-1))
+        if not n in lowerCorners and not n in leftCorners:
+                            toReveal.append(n+(width-1))
+        if not n in lowerCorners and not n in rightCorners:
+                            toReveal.append(n+(width+1))
+        return toReveal
+
+
+    def getMineCoords(amount, n):
         mineCoords = list()
         i = 0
+        surrounding = getSurrounding(n)
         while i < amount:
-            toappend = rd.randint(0, width*height-1)
-            if toappend in mineCoords:
+            toAppend = rd.randint(0, width*height-1)
+            if toAppend in mineCoords or toAppend in surrounding:
                 continue
             else:
-                mineCoords.append(toappend)
+                mineCoords.append(toAppend)
                 i += 1
         return mineCoords
     
@@ -59,28 +84,7 @@ def initiate(mode):
 
 
     def getValue(n):
-        toCheck = list()
-        upperCorners = [i for i in range(width)]
-        lowerCorners = [width*height - (i+1) for i in range(width)]
-        leftCorners = [width*i for i in range(height)]
-        rightCorners = [(width*(i+1))-1 for i in range(height)]
-        if True:
-            if not n in upperCorners:
-                toCheck.append(n-width)
-            if not n in leftCorners:
-                toCheck.append(n-1)
-            if not n in rightCorners:
-                toCheck.append(n+1)
-            if not n in lowerCorners:
-                toCheck.append(n+width)
-            if not n in upperCorners and not n in leftCorners:
-                toCheck.append(n-(width+1))
-            if not n in upperCorners and not n in rightCorners:
-                toCheck.append(n-(width-1))
-            if not n in lowerCorners and not n in leftCorners:
-                toCheck.append(n+(width-1))
-            if not n in lowerCorners and not n in rightCorners:
-                toCheck.append(n+(width+1))
+        toCheck = getSurrounding(n)
         
         val = 0
         for mineCheck in toCheck:
@@ -93,6 +97,15 @@ def initiate(mode):
 
 
     def buttonClicked(n, ignoreFlags=False):
+        if revealedButtons == []:
+            mineCoords = getMineCoords(mineAmount, n)
+            mineCoords.sort(key=lambda x: x)
+            for i in range(height*width):
+                if i in mineCoords:
+                    buttons[i]["Type"] = "Mine"
+                else:
+                    buttons[i]["Type"] = "Number"
+                    buttons[i]["Value"] = 0
         if not buttons[n]["Revealed"] and not flag:
             if not buttons[n]["Flagged"] or ignoreFlags:
                 buttons[n]["Revealed"] = True
@@ -106,32 +119,11 @@ def initiate(mode):
                 if not buttons[n]["Value"] == 0:
                     buttons[n]["Button"]["text"] = buttons[n]["Value"]
                 else:
-                    if True:
-                        upperCorners = [i for i in range(width)]
-                        lowerCorners = [width*height - (i+1) for i in range(width)]
-                        leftCorners = [width*i for i in range(height)]
-                        rightCorners = [(width*(i+1))-1 for i in range(height)]
-                        toReveal = list()
-                        if not n in upperCorners:
-                            toReveal.append(n-width)
-                        if not n in leftCorners:
-                            toReveal.append(n-1)
-                        if not n in rightCorners:
-                            toReveal.append(n+1)
-                        if not n in lowerCorners:
-                            toReveal.append(n+width)
-                        if not n in upperCorners and not n in leftCorners:
-                            toReveal.append(n-(width+1))
-                        if not n in upperCorners and not n in rightCorners:
-                            toReveal.append(n-(width-1))
-                        if not n in lowerCorners and not n in leftCorners:
-                            toReveal.append(n+(width-1))
-                        if not n in lowerCorners and not n in rightCorners:
-                            toReveal.append(n+(width+1))
+                    toReveal = getSurrounding(n)
                     for i in toReveal:
                         buttonClicked(i, ignoreFlags=True)
                 if len(revealedButtons) > width*height - mineAmount - 1:
-                    tl = tk.Toplevel()
+                    tl = tk.Toplevel(master=window)
                     label = tk.Label(master=tl, text="You won!", fg="green").pack()
                     tl.mainloop()
                 if buttons[n]["Button"]["text"] == 1:
@@ -154,8 +146,10 @@ def initiate(mode):
                     buttons[n]["Button"].config(text="", fg="black")
 
 
-    mineCoords = getMineCoords(mineAmount)
-    mineCoords.sort(key=lambda x: x)
+    def wrap(n):
+        def wrapper(n=n):
+            buttonClicked(n)
+        return wrapper
 
     exitButton = tk.Button(master=window, text="Exit", bg="red", command=exitWindow)
     exitButton.place(x=1470, y=5, width=60, height=30)
@@ -164,7 +158,6 @@ def initiate(mode):
         flag = True
     switchButton.place(x=200, y=200, width=300, height=300)
 
-    
     line = 1
     y = 1
     buttons = list()
@@ -172,14 +165,10 @@ def initiate(mode):
         if line == width+1:
             y += 1
             line = 1
-        buttons.append({"Button": tk.Button(master=window, text="", bg="gray", command=partial(buttonClicked, n), font=("Arial", 20)), "Revealed": False, "Flagged": False})
-        if n in mineCoords:
-            buttons[n]["Type"] = "Mine"
-        else:
-            buttons[n]["Type"] = "Number"
-            buttons[n]["Value"] = 0
+        buttons.append({"Button": tk.Button(master=window, text="", bg="gray", command=wrap(n), font=("Arial", 20)), "Revealed": False, "Flagged": False})
         buttons[n]["Button"].place(x=line*buttonSize+500, y=y*buttonSize, width=buttonSize, height=buttonSize)
         line += 1
+
 
     window.mainloop()
 
